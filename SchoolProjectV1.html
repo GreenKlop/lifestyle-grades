@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Индекс Учебной Нагрузки</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600;700&family=IBM+Plex+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --panel: #13161d;
+    --border: #222635;
+    --accent: #4f8fff;
+    --accent2: #00e5c0;
+    --warn: #ffb84f;
+    --danger: #ff4f6e;
+    --text: #e4e8f5;
+    --muted: #5a6080;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+  }
+
+  /* GRID BACKGROUND */
+  body::before {
+    content:'';
+    position:fixed; inset:0;
+    background-image:
+      linear-gradient(rgba(79,143,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(79,143,255,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events:none;
+    z-index:0;
+  }
+
+  .wrap { position:relative; z-index:1; max-width:860px; margin:0 auto; padding:40px 24px 80px; }
+
+  /* HEADER */
+  .header { margin-bottom:48px; }
+  .header .label {
+    font-family: var(--mono);
+    font-size:11px;
+    letter-spacing:0.2em;
+    color: var(--accent);
+    text-transform:uppercase;
+    margin-bottom:10px;
+  }
+  h1 {
+    font-family: var(--mono);
+    font-size: clamp(22px, 4vw, 36px);
+    font-weight:700;
+    line-height:1.15;
+    color: var(--text);
+    margin-bottom:12px;
+  }
+  h1 span { color: var(--accent2); }
+  .header p {
+    font-size:14px;
+    color: var(--muted);
+    max-width:600px;
+    line-height:1.7;
+  }
+
+  /* SECTIONS */
+  .section {
+    margin-bottom:36px;
+    font-size:11px;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color: var(--accent);
+    border-left: 3px solid var(--accent);
+    padding-left:12px;
+    margin-bottom:20px;
+  }
+
+  /* QUESTION CARD */
+  .q-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius:8px;
+    padding:20px 24px;
+    margin-bottom:40px;
+    transition: border-color 0.2s;
+  }
+  .q-card:hover { border-color: #2d3250; }
+
+  .q-label {
+    font-size:13.5px;
+    font-weight:500;
+    color: var(--text);
+    margin-bottom:14px;
+    line-height:1.5;
+  }
+  .q-meta {
+    font-family: var(--mono);
+    font-size:10px;
+    color: var(--muted);
+    margin-bottom:14px;
+  }
+
+  /* RADIO OPTIONS */
+  .options { display:flex; flex-direction:column; gap:12px; }
+  .opt {
+    display:flex; align-items:center; gap:12px;
+    cursor:pointer;
+    padding:9px 14px;
+    border-radius:6px;
+    border: 1px solid transparent;
+    transition: background 0.15s, border-color 0.15s;
+    font-size:13px;
+    color: var(--muted);
+  }
+  .opt:hover { background: rgba(79,143,255,0.06); border-color: var(--border); color: var(--text); }
+  .opt input[type=radio] { display:none; }
+  .opt .dot {
+    width:14px; height:14px;
+    border-radius:50%;
+    border: 2px solid var(--muted);
+    flex-shrink:0;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .opt.selected {
+    background: rgba(79,143,255,0.1);
+    border-color: var(--accent);
+    color: var(--text);
+  }
+  .opt.selected .dot {
+    border-color: var(--accent);
+    background: var(--accent);
+  }
+
+  /* RANGE SLIDER */
+  .range-wrap { padding: 4px 0 0; }
+  .range-labels { display:flex; justify-content:space-between; font-size:11px; color:var(--muted); margin-bottom:8px; font-family:var(--mono); }
+  input[type=range] {
+    -webkit-appearance:none;
+    width:100%; height:4px;
+    background: var(--border);
+    border-radius:2px;
+    outline:none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance:none;
+    width:18px; height:18px;
+    border-radius:50%;
+    background: var(--accent);
+    cursor:pointer;
+    border: 3px solid var(--bg);
+    box-shadow: 0 0 0 2px var(--accent);
+    transition: box-shadow 0.2s;
+  }
+  input[type=range]:hover::-webkit-slider-thumb { box-shadow: 0 0 0 4px rgba(79,143,255,0.25); }
+  .range-val {
+    font-family:var(--mono);
+    font-size:22px;
+    font-weight:700;
+    color: var(--accent2);
+    margin-top:12px;
+    text-align:center;
+  }
+
+  /* CALCULATE BUTTON */
+  .btn-wrap { display:flex; justify-content:center; margin:40px 0 0; }
+  .btn-calc {
+    font-family: var(--mono);
+    font-size:13px;
+    font-weight:700;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    background: var(--accent);
+    color: #fff;
+    border:none;
+    cursor:pointer;
+    padding:16px 48px;
+    border-radius:6px;
+    transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+    box-shadow: 0 0 24px rgba(79,143,255,0.3);
+  }
+  .btn-calc:hover { background:#3a78f0; box-shadow: 0 0 40px rgba(79,143,255,0.5); }
+  .btn-calc:active { transform:scale(0.98); }
+
+  /* RESULTS PANEL */
+  #results {
+    display:none;
+    margin-top:48px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius:12px;
+    overflow:hidden;
+  }
+  .res-header {
+    padding:28px 32px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .res-title { font-family:var(--mono); font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+  .res-index {
+    font-family:var(--mono);
+    font-size:56px;
+    font-weight:700;
+    line-height:1;
+  }
+  .res-index.high { color: var(--accent2); }
+  .res-index.mid  { color: var(--warn); }
+  .res-index.low  { color: var(--danger); }
+
+  .res-badge {
+    display:inline-block;
+    margin-top:10px;
+    padding:5px 14px;
+    border-radius:4px;
+    font-family:var(--mono);
+    font-size:12px;
+    font-weight:600;
+    letter-spacing:0.08em;
+  }
+  .badge-high { background:rgba(0,229,192,0.15); color:var(--accent2); border:1px solid rgba(0,229,192,0.3); }
+  .badge-mid  { background:rgba(255,184,79,0.15); color:var(--warn); border:1px solid rgba(255,184,79,0.3); }
+  .badge-low  { background:rgba(255,79,110,0.15); color:var(--danger); border:1px solid rgba(255,79,110,0.3); }
+
+  .res-desc { margin-top:14px; font-size:13.5px; color: var(--muted); line-height:1.7; max-width:560px; }
+
+  /* Z-SCORE TABLE */
+  .ztable-wrap { padding:28px 32px; }
+  .ztable-title { font-family:var(--mono); font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:var(--muted); margin-bottom:18px; }
+  .ztable {
+    width:100%;
+    border-collapse:collapse;
+    font-size:12px;
+  }
+  .ztable th {
+    font-family:var(--mono);
+    font-size:10px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--muted);
+    padding:8px 12px;
+    text-align:left;
+    border-bottom: 1px solid var(--border);
+  }
+  .ztable td { padding:10px 12px; border-bottom: 1px solid rgba(34,38,53,0.7); color:var(--text); vertical-align:middle; }
+  .ztable tr:last-child td { border-bottom:none; }
+  .ztable tr:hover td { background: rgba(255,255,255,0.02); }
+  .zval {
+    font-family:var(--mono);
+    font-size:13px;
+    font-weight:600;
+  }
+  .zbar-wrap { width:100px; }
+  .zbar-bg { height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
+  .zbar-fill { height:4px; border-radius:2px; transition: width 0.5s ease; }
+  .zpos { background: var(--accent2); }
+  .zneg { background: var(--danger); }
+  .contrib { font-family:var(--mono); font-size:11px; color:var(--muted); }
+  .contrib.cpos { color:var(--accent2); }
+  .contrib.cneg { color:var(--danger); }
+
+  .error-msg {
+    background: rgba(255,79,110,0.1);
+    border: 1px solid rgba(255,79,110,0.3);
+    color: var(--danger);
+    font-size:13px;
+    padding:14px 20px;
+    border-radius:6px;
+    margin-top:16px;
+    font-family:var(--mono);
+    display:none;
+  }
+
+  .q-card.q-missing {
+    border-color: var(--danger) !important;
+    box-shadow: 0 0 0 4px rgba(255,79,110,0.18);
+    border-radius: 14px;
+    padding: 24px 28px;
+  }
+  .q-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    margin-bottom: 4px;
+    letter-spacing: 0.08em;
+  }
+  .factor-short { display:none; font-family:var(--mono); color:var(--muted); }
+
+    .ztable-wrap { padding:18px; overflow-x:auto; }
+    .res-index { font-size:40px; }
+    .zbar-wrap { display:none; }
+  }
+
+  @media(max-width:480px) {
+    .ztable-wrap { padding:12px 10px; }
+    .factor-full { display:none !important; }
+    .factor-short { display:inline !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <div class="label">Исследовательский проект · Максим Садритдинов</div>
+    <h1>Индекс<br><span>учебной нагрузки</span></h1>
+    <p>Введите свои данные — калькулятор рассчитает стандартизированный индекс влияния образа жизни на академическую успеваемость по формуле <strong>I = Σ(r<sub>i</sub> · z<sub>i</sub>)</strong>.</p>
+    <p style="margin-top:10px; font-size:13px; color:var(--muted); line-height:1.7;">⚠️ Результат является <em>приблизительным</em>: модель построена на ограниченной выборке и отражает статистические тенденции, а не индивидуальный диагноз. Значения корреляций и нормы рассчитаны на основе данных, собранных в школе <strong style="color:var(--text)">Adriatic Open</strong>, и могут не отражать общую картину.</p>
+  </div>
+
+  <form id="survey" novalidate>
+
+    <!-- SECTION 1: СОН -->
+    <div class="section">
+
+      <div class="q-card" data-id="sleep_time">
+        <div class="q-label">Во сколько вы обычно ложитесь спать в учебные дни?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="sleep_time" value="5"><span class="dot"></span>Раньше 22:00</label>
+          <label class="opt"><input type="radio" name="sleep_time" value="4"><span class="dot"></span>Около 23:00</label>
+          <label class="opt"><input type="radio" name="sleep_time" value="3"><span class="dot"></span>Около 00:00</label>
+          <label class="opt"><input type="radio" name="sleep_time" value="2"><span class="dot"></span>Около 1:00</label>
+          <label class="opt"><input type="radio" name="sleep_time" value="1"><span class="dot"></span>Около 2:00</label>
+          <label class="opt"><input type="radio" name="sleep_time" value="0"><span class="dot"></span>Позже двух часов ночи</label>
+        </div>
+      </div>
+
+      <div class="q-card" data-id="sleep_feel">
+        <div class="q-label">Чувствуете ли вы себя выспавшимся(ей) по утрам?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="sleep_feel" value="4"><span class="dot"></span>Всегда</label>
+          <label class="opt"><input type="radio" name="sleep_feel" value="3"><span class="dot"></span>Часто</label>
+          <label class="opt"><input type="radio" name="sleep_feel" value="2"><span class="dot"></span>Иногда</label>
+          <label class="opt"><input type="radio" name="sleep_feel" value="1"><span class="dot"></span>Редко</label>
+          <label class="opt"><input type="radio" name="sleep_feel" value="0"><span class="dot"></span>Никогда</label>
+        </div>
+      </div>
+
+      <div class="q-card" data-id="sleep_hours">
+        <div class="q-label">Сколько часов в среднем вы спите в учебные дни?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="sleep_hours" value="0"><span class="dot"></span>6 часов и меньше</label>
+          <label class="opt"><input type="radio" name="sleep_hours" value="1"><span class="dot"></span>Около 7 часов</label>
+          <label class="opt"><input type="radio" name="sleep_hours" value="2"><span class="dot"></span>Около 8 часов</label>
+          <label class="opt"><input type="radio" name="sleep_hours" value="3"><span class="dot"></span>Около 9 часов</label>
+          <label class="opt"><input type="radio" name="sleep_hours" value="4"><span class="dot"></span>10 часов и больше</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 2: АКТИВНОСТЬ -->
+    <div class="section">
+
+      <div class="q-card" data-id="hobby_hours">
+        <div class="q-label">Сколько часов в учебный день вы тратите на хобби или доп. занятия?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="hobby_hours" value="4"><span class="dot"></span>0 часов</label>
+          <label class="opt"><input type="radio" name="hobby_hours" value="3"><span class="dot"></span>1 час</label>
+          <label class="opt"><input type="radio" name="hobby_hours" value="2"><span class="dot"></span>2 часа</label>
+          <label class="opt"><input type="radio" name="hobby_hours" value="1"><span class="dot"></span>3 часа</label>
+          <label class="opt"><input type="radio" name="hobby_hours" value="0"><span class="dot"></span>4 часа и больше</label>
+        </div>
+      </div>
+
+      <div class="q-card" data-id="games_hours">
+        <div class="q-label">Сколько часов в учебный день вы проводите за компьютерными играми?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="games_hours" value="4"><span class="dot"></span>0 часов</label>
+          <label class="opt"><input type="radio" name="games_hours" value="3"><span class="dot"></span>1 час</label>
+          <label class="opt"><input type="radio" name="games_hours" value="2"><span class="dot"></span>2 часа</label>
+          <label class="opt"><input type="radio" name="games_hours" value="1"><span class="dot"></span>3 часа</label>
+          <label class="opt"><input type="radio" name="games_hours" value="0"><span class="dot"></span>4 часа и больше</label>
+        </div>
+      </div>
+
+      <div class="q-card" data-id="sport">
+        <div class="q-label">Как часто и регулярно вы занимаетесь спортом?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="sport" value="4"><span class="dot"></span>Регулярно 2–3 раза в неделю</label>
+          <label class="opt"><input type="radio" name="sport" value="3"><span class="dot"></span>Раз в неделю / раз в две недели</label>
+          <label class="opt"><input type="radio" name="sport" value="2"><span class="dot"></span>Иногда по своему желанию</label>
+          <label class="opt"><input type="radio" name="sport" value="1"><span class="dot"></span>Очень редко</label>
+          <label class="opt"><input type="radio" name="sport" value="0"><span class="dot"></span>Никогда</label>
+        </div>
+      </div>
+
+      <div class="q-card" data-id="breakfast">
+        <div class="q-label">Завтракаете ли вы перед школой?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="breakfast" value="4"><span class="dot"></span>Всегда</label>
+          <label class="opt"><input type="radio" name="breakfast" value="3"><span class="dot"></span>Часто</label>
+          <label class="opt"><input type="radio" name="breakfast" value="2"><span class="dot"></span>Иногда</label>
+          <label class="opt"><input type="radio" name="breakfast" value="1"><span class="dot"></span>Редко</label>
+          <label class="opt"><input type="radio" name="breakfast" value="0"><span class="dot"></span>Никогда</label>
+        </div>
+      </div>
+
+      <div class="q-card" data-id="energy_drinks">
+        <div class="q-label">Употребляете ли вы энергетические напитки?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="energy_drinks" value="0"><span class="dot"></span>Очень часто</label>
+          <label class="opt"><input type="radio" name="energy_drinks" value="1"><span class="dot"></span>Иногда</label>
+          <label class="opt"><input type="radio" name="energy_drinks" value="2"><span class="dot"></span>Очень редко</label>
+          <label class="opt"><input type="radio" name="energy_drinks" value="3"><span class="dot"></span>Никогда</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 3: УСПЕВАЕМОСТЬ -->
+    <div class="section">
+
+      <div class="q-card" data-id="performance">
+        <div class="q-label">Как вы оцениваете свою среднюю успеваемость? (1 — слабая, 5 — отличная)</div>
+        <div class="range-wrap">
+          <div class="range-labels"><span>1 — Слабая</span><span>5 — Отличная</span></div>
+          <input type="range" name="performance" min="1" max="5" value="3" oninput="showVal(this,'performance_val')">
+          <div class="range-val" id="performance_val">3</div>
+        </div>
+      </div>
+
+      <div class="q-card" data-id="interest">
+        <div class="q-label">Насколько вам интересно учиться?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="interest" value="3"><span class="dot"></span>Мне очень интересно учиться</label>
+          <label class="opt"><input type="radio" name="interest" value="2"><span class="dot"></span>Интересно, но только в любимых направлениях</label>
+          <label class="opt"><input type="radio" name="interest" value="1"><span class="dot"></span>Равнодушен — это просто обязательное занятие</label>
+          <label class="opt"><input type="radio" name="interest" value="0"><span class="dot"></span>Мне не интересно учиться</label>
+        </div>
+      </div>
+
+      <div class="q-card" data-id="edu_important">
+        <div class="q-label">Считаете ли вы образование важным для будущего?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="edu_important" value="3"><span class="dot"></span>Да, без него невозможна успешная жизнь</label>
+          <label class="opt"><input type="radio" name="edu_important" value="2"><span class="dot"></span>Да, но можно обойтись и без него</label>
+          <label class="opt"><input type="radio" name="edu_important" value="1"><span class="dot"></span>Не совсем, практические навыки важнее</label>
+          <label class="opt"><input type="radio" name="edu_important" value="0"><span class="dot"></span>Нет, образование не важно</label>
+        </div>
+      </div>
+
+      <div class="q-card" data-id="profession">
+        <div class="q-label">Есть ли у вас представление о будущей профессии?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="profession" value="2"><span class="dot"></span>Да</label>
+          <label class="opt"><input type="radio" name="profession" value="1"><span class="dot"></span>Да, но только примерное</label>
+          <label class="opt"><input type="radio" name="profession" value="0"><span class="dot"></span>Нет</label>
+        </div>
+      </div>
+
+      <div class="q-card" data-id="higher_edu">
+        <div class="q-label">Планируете ли вы получать высшее образование?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="higher_edu" value="2"><span class="dot"></span>Да</label>
+          <label class="opt"><input type="radio" name="higher_edu" value="1"><span class="dot"></span>Пока не знаю</label>
+          <label class="opt"><input type="radio" name="higher_edu" value="0"><span class="dot"></span>Нет</label>
+        </div>
+      </div>
+
+      <div class="q-card" data-id="future_plans">
+        <div class="q-label">Есть ли у вас чёткие планы на будущее? (1 — нет, 5 — да, конкретные)</div>
+        <div class="range-wrap">
+          <div class="range-labels"><span>1 — Нет планов</span><span>5 — Чёткие планы</span></div>
+          <input type="range" name="future_plans" min="1" max="5" value="3" oninput="showVal(this,'future_plans_val')">
+          <div class="range-val" id="future_plans_val">3</div>
+        </div>
+      </div>
+
+      <div class="q-card" data-id="parents_motivation">
+        <div class="q-label">Чувствуешь ли ты, что родители влияют на твою мотивацию к учёбе?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="parents_motivation" value="3"><span class="dot"></span>Да, очень сильно влияют</label>
+          <label class="opt"><input type="radio" name="parents_motivation" value="2"><span class="dot"></span>Немного влияют</label>
+          <label class="opt"><input type="radio" name="parents_motivation" value="1"><span class="dot"></span>Почти не влияют</label>
+          <label class="opt"><input type="radio" name="parents_motivation" value="0"><span class="dot"></span>Не влияют вообще</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 4: СЕМЬЯ -->
+    <div class="section">
+
+      <div class="q-card" data-id="siblings">
+        <div class="q-label">Сколько у вас братьев и сестёр, с которыми вы сейчас живёте?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="siblings" value="3"><span class="dot"></span>Нет братьев/сестёр или не живу с ними</label>
+          <label class="opt"><input type="radio" name="siblings" value="2"><span class="dot"></span>Один брат/сестра</label>
+          <label class="opt"><input type="radio" name="siblings" value="1"><span class="dot"></span>Два брата/сестры</label>
+          <label class="opt"><input type="radio" name="siblings" value="0"><span class="dot"></span>Три и больше</label>
+        </div>
+      </div>
+
+      <div class="q-card" data-id="birth_order">
+        <div class="q-label">Являетесь ли вы старшим ребёнком в семье?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="birth_order" value="0"><span class="dot"></span>Да, я старший ребёнок</label>
+          <label class="opt"><input type="radio" name="birth_order" value="1"><span class="dot"></span>Нет, я средний ребёнок</label>
+          <label class="opt"><input type="radio" name="birth_order" value="2"><span class="dot"></span>Нет, я младший ребёнок</label>
+          <label class="opt"><input type="radio" name="birth_order" value="3"><span class="dot"></span>Я единственный ребёнок</label>
+        </div>
+      </div>
+
+      <div class="q-card" data-id="dad_edu">
+        <div class="q-label">Какое образование у вашего папы / опекуна 2?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="dad_edu" value="3"><span class="dot"></span>Больше чем одно высшее образование</label>
+          <label class="opt"><input type="radio" name="dad_edu" value="2"><span class="dot"></span>Высшее образование</label>
+          <label class="opt"><input type="radio" name="dad_edu" value="1"><span class="dot"></span>Среднее образование</label>
+          <label class="opt"><input type="radio" name="dad_edu" value="0"><span class="dot"></span>Не знаю</label>
+        </div>
+      </div>
+
+      <div class="q-card" data-id="family_finance">
+        <div class="q-label">Как вы оцениваете материальное положение вашей семьи?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="family_finance" value="3"><span class="dot"></span>Высокое</label>
+          <label class="opt"><input type="radio" name="family_finance" value="2"><span class="dot"></span>Выше среднего</label>
+          <label class="opt"><input type="radio" name="family_finance" value="1"><span class="dot"></span>Среднее</label>
+          <label class="opt"><input type="radio" name="family_finance" value="0"><span class="dot"></span>Ниже среднего</label>
+        </div>
+      </div>
+
+      <div class="q-card" data-id="study_place">
+        <div class="q-label">Есть ли у вас дома собственное место для учёбы?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="study_place" value="1"><span class="dot"></span>Да</label>
+          <label class="opt"><input type="radio" name="study_place" value="0"><span class="dot"></span>Нет</label>
+        </div>
+      </div>
+
+      <div class="q-card" data-id="personal_pc">
+        <div class="q-label">Есть ли у вас личный компьютер или ноутбук для учёбы?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="personal_pc" value="1"><span class="dot"></span>Да</label>
+          <label class="opt"><input type="radio" name="personal_pc" value="0"><span class="dot"></span>Нет</label>
+        </div>
+      </div>
+
+      <div class="q-card" data-id="stability">
+        <div class="q-label">Влияют ли семейные планы на ваше ощущение стабильности?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="stability" value="3"><span class="dot"></span>Нет, никак не влияют — чувствую стабильность</label>
+          <label class="opt"><input type="radio" name="stability" value="2"><span class="dot"></span>Не совсем, но в основном завишу от себя</label>
+          <label class="opt"><input type="radio" name="stability" value="1"><span class="dot"></span>Скорее да, ориентируюсь на них</label>
+          <label class="opt"><input type="radio" name="stability" value="0"><span class="dot"></span>Полностью да, зависит от планов семьи</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 5: АДАПТАЦИЯ -->
+    <div class="section">
+
+      <div class="q-card" data-id="adaptation">
+        <div class="q-label">Насколько вы чувствуете себя адаптированным(ой) в Черногории? (1 — чужой, 5 — полностью)</div>
+        <div class="range-wrap">
+          <div class="range-labels"><span>1 — Чужой</span><span>5 — Полностью</span></div>
+          <input type="range" name="adaptation" min="1" max="5" value="3" oninput="showVal(this,'adaptation_val')">
+          <div class="range-val" id="adaptation_val">3</div>
+        </div>
+      </div>
+
+      <div class="q-card" data-id="family_discussions">
+        <div class="q-label">Принимаете ли вы участие в семейных обсуждениях возможных дальнейших переездов?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="family_discussions" value="2"><span class="dot"></span>Да</label>
+          <label class="opt"><input type="radio" name="family_discussions" value="1"><span class="dot"></span>Не всегда, но иногда</label>
+          <label class="opt"><input type="radio" name="family_discussions" value="0"><span class="dot"></span>Нет</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 6: ЗДОРОВЬЕ -->
+    <div class="section">
+
+      <div class="q-card" data-id="health">
+        <div class="q-label">Как вы оцениваете состояние своего здоровья? (1 — плохое, 5 — отличное)</div>
+        <div class="range-wrap">
+          <div class="range-labels"><span>1 — Плохое</span><span>5 — Отличное</span></div>
+          <input type="range" name="health" min="1" max="5" value="3" oninput="showVal(this,'health_val')">
+          <div class="range-val" id="health_val">3</div>
+        </div>
+      </div>
+
+      <div class="q-card" data-id="chronic">
+        <div class="q-label">Есть ли у вас хронические заболевания?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="chronic" value="0"><span class="dot"></span>Да</label>
+          <label class="opt"><input type="radio" name="chronic" value="0"><span class="dot"></span>Не знаю / не хочу говорить</label>
+          <label class="opt"><input type="radio" name="chronic" value="1"><span class="dot"></span>Нет</label>
+        </div>
+      </div>
+
+      <div class="q-card" data-id="skip_health">
+        <div class="q-label">Как часто вы пропускаете школу по состоянию здоровья?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="skip_health" value="0"><span class="dot"></span>Очень часто</label>
+          <label class="opt"><input type="radio" name="skip_health" value="1"><span class="dot"></span>Иногда</label>
+          <label class="opt"><input type="radio" name="skip_health" value="2"><span class="dot"></span>Редко</label>
+          <label class="opt"><input type="radio" name="skip_health" value="3"><span class="dot"></span>Никогда</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 7: КЛАСС -->
+    <div class="section">
+
+      <div class="q-card" data-id="comfort_class">
+        <div class="q-label">Как комфортно вы чувствуете себя в своём классе? (1 — некомфортно, 5 — отлично)</div>
+        <div class="range-wrap">
+          <div class="range-labels"><span>1 — Некомфортно</span><span>5 — Отлично</span></div>
+          <input type="range" name="comfort_class" min="1" max="5" value="3" oninput="showVal(this,'comfort_class_val')">
+          <div class="range-val" id="comfort_class_val">3</div>
+        </div>
+      </div>
+
+      <div class="q-card" data-id="conflicts_class">
+        <div class="q-label">Есть ли в классе конфликты?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="conflicts_class" value="0"><span class="dot"></span>Да, довольно часто</label>
+          <label class="opt"><input type="radio" name="conflicts_class" value="1"><span class="dot"></span>Да, но очень редко</label>
+          <label class="opt"><input type="radio" name="conflicts_class" value="2"><span class="dot"></span>Нет, их не бывает</label>
+        </div>
+      </div>
+
+      <div class="q-card" data-id="teacher_support">
+        <div class="q-label">Чувствуете ли вы поддержку со стороны учителей?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="teacher_support" value="3"><span class="dot"></span>Да, сильную поддержку</label>
+          <label class="opt"><input type="radio" name="teacher_support" value="2"><span class="dot"></span>Скорее да, часто чувствую поддержку</label>
+          <label class="opt"><input type="radio" name="teacher_support" value="1"><span class="dot"></span>Скорее нет, редко</label>
+          <label class="opt"><input type="radio" name="teacher_support" value="0"><span class="dot"></span>Вообще нет</label>
+        </div>
+      </div>
+
+      <div class="q-card" data-id="classmates_comfort">
+        <div class="q-label">Как вы думаете, чувствуют ли себя комфортно ваши одноклассники? (1 — нет, 5 — да)</div>
+        <div class="range-wrap">
+          <div class="range-labels"><span>1 — Нет</span><span>5 — Да</span></div>
+          <input type="range" name="classmates_comfort" min="1" max="5" value="3" oninput="showVal(this,'classmates_comfort_val')">
+          <div class="range-val" id="classmates_comfort_val">3</div>
+        </div>
+      </div>
+
+      <div class="q-card" data-id="own_conflicts">
+        <div class="q-label">Были ли вы участником конфликта в школе?</div>
+        <div class="options">
+          <label class="opt"><input type="radio" name="own_conflicts" value="0"><span class="dot"></span>Да, и довольно часто</label>
+          <label class="opt"><input type="radio" name="own_conflicts" value="1"><span class="dot"></span>Редко</label>
+          <label class="opt"><input type="radio" name="own_conflicts" value="2"><span class="dot"></span>Нет, ни разу</label>
+        </div>
+      </div>
+    </div>
+
+    <div id="error-msg" class="error-msg">⚠ Пожалуйста, ответьте на все вопросы перед расчётом.</div>
+
+    <div class="btn-wrap">
+      <button type="button" class="btn-calc" onclick="calculate()">Рассчитать индекс →</button>
+    </div>
+  </form>
+
+  <!-- RESULTS: INDEX -->
+  <div id="results">
+    <div class="res-header">
+      <div class="res-title">Итоговый индекс I</div>
+      <div class="res-index" id="res-index-val">—</div>
+      <div id="res-badge" class="res-badge"></div>
+      <div class="res-desc" id="res-desc"></div>
+    </div>
+    <div class="ztable-wrap">
+      <div class="ztable-title">Z-score по каждому фактору</div>
+      <table class="ztable">        <thead>
+          <tr>
+            <th>Фактор</th>
+            <th>r</th>
+            <th>Ваш ответ</th>
+            <th>z-score</th>
+            <th>Вклад r×z</th>
+          </tr>
+        </thead>
+        <tbody id="ztable-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- RESULTS: REGRESSION -->
+  <div id="results-reg" style="display:none; margin-top:24px; background:var(--panel); border:1px solid var(--border); border-radius:12px; overflow:hidden;">
+    <div class="res-header">
+      <div class="res-title">Модель предсказания оценки · MLR</div>
+      <div style="font-family:var(--mono); font-size:11px; color:var(--muted); margin-bottom:14px;">ŷ = 4.446 + 0.061·x₁ − 0.100·x₂ − 0.041·x₃ − 0.041·x₄ + 0.125·x₅ &nbsp;|&nbsp; R² = 0.587</div>
+      <div style="font-family:var(--mono); font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:var(--muted); margin-bottom:6px;">Предсказанная оценка</div>
+      <div class="res-index" id="reg-grade" style="font-size:56px;"></div>
+      <div id="reg-badge" class="res-badge" style="margin-top:10px;"></div>
+      <div id="reg-desc" class="res-desc"></div>
+    </div>
+    <div class="ztable-wrap">
+      <div class="ztable-title">Вклад каждого фактора в предсказание</div>
+      <table class="ztable">
+        <thead>
+          <tr>
+            <th>Фактор</th>
+            <th>β</th>
+            <th>Ваш z</th>
+            <th>β × z</th>
+          </tr>
+        </thead>
+        <tbody id="reg-table-body"></tbody>
+      </table>
+      <div style="font-family:var(--mono); font-size:10px; color:var(--muted); margin-top:14px; line-height:1.6;">
+        * Модель построена на выборке 22 учеников школы Adriatic Open. R²=0.587 — объясняет 58.7% разброса оценок. Стандартная ошибка SE ≈ ±0.21 балла.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─── FACTOR DEFINITIONS ───────────────────────────────────────────────────────
+// name, fieldName, r, mean, std
+const FACTORS = [
+  { name: "Время отхода ко сну",         field: "sleep_time",          r:  0.20, mean: 2.8, std: 1.3 },
+  { name: "Ощущение выспанности",        field: "sleep_feel",          r: -0.10, mean: 2.1, std: 1.1 },
+  { name: "Хобби / доп. занятия",        field: "hobby_hours",         r:  0.50, mean: 2.3, std: 1.2 },
+  { name: "Часы сна",                    field: "sleep_hours",         r:  0.08, mean: 1.8, std: 1.0 },
+  { name: "Компьютерные игры",           field: "games_hours",         r: -0.18, mean: 2.6, std: 1.3 },
+  { name: "Занятия спортом",             field: "sport",               r: -0.07, mean: 2.4, std: 1.1 },
+  { name: "Завтрак",                     field: "breakfast",           r: -0.31, mean: 2.5, std: 1.2 },
+  { name: "Энергетические напитки",      field: "energy_drinks",       r:  0.17, mean: 2.0, std: 0.9 },
+  { name: "Успеваемость",                field: "performance",         r:  0.24, mean: 3.0, std: 1.0 },
+  { name: "Братья/сёстры",               field: "siblings",            r: -0.26, mean: 2.0, std: 1.0 },
+  { name: "Порядок рождения",            field: "birth_order",         r: -0.25, mean: 1.5, std: 1.1 },
+  { name: "Образование отца",            field: "dad_edu",             r:  0.22, mean: 1.8, std: 0.9 },
+  { name: "Материальное положение",      field: "family_finance",      r: -0.15, mean: 1.6, std: 0.8 },
+  { name: "Место для учёбы дома",        field: "study_place",         r: -0.30, mean: 0.7, std: 0.5 },
+  { name: "Личный компьютер",            field: "personal_pc",         r:  0.20, mean: 0.7, std: 0.5 },
+  { name: "Интерес к учёбе",             field: "interest",            r:  0.13, mean: 1.5, std: 0.9 },
+  { name: "Важность образования",        field: "edu_important",       r:  0.20, mean: 2.0, std: 0.9 },
+  { name: "Представление о профессии",   field: "profession",          r: -0.10, mean: 1.0, std: 0.8 },
+  { name: "Высшее образование",          field: "higher_edu",          r:  0.15, mean: 1.4, std: 0.7 },
+  { name: "Адаптация в Черногории",      field: "adaptation",          r: -0.33, mean: 3.0, std: 1.2 },
+  { name: "Участие в обс. переездов",    field: "family_discussions",  r: -0.28, mean: 1.0, std: 0.8 },
+  { name: "Стабильность от семьи",       field: "stability",           r: -0.51, mean: 1.5, std: 1.0 },
+  { name: "Здоровье",                    field: "health",              r:  0.07, mean: 3.0, std: 1.1 },
+  { name: "Хронические заболевания",     field: "chronic",             r:  0.24, mean: 0.8, std: 0.4 },
+  { name: "Пропуски по болезни",         field: "skip_health",         r: -0.10, mean: 2.0, std: 0.9 },
+  { name: "Комфорт в классе",            field: "comfort_class",       r:  0.20, mean: 3.0, std: 1.1 },
+  { name: "Конфликты в классе",          field: "conflicts_class",     r:  0.18, mean: 1.0, std: 0.7 },
+  { name: "Поддержка учителей",          field: "teacher_support",     r:  0.25, mean: 1.8, std: 1.0 },
+  { name: "Комфорт одноклассников",      field: "classmates_comfort",  r:  0.15, mean: 3.0, std: 1.0 },
+  { name: "Участие в конфликтах",        field: "own_conflicts",       r:  0.13, mean: 1.2, std: 0.7 },
+  { name: "Чёткие планы на будущее",     field: "future_plans",        r: -0.18, mean: 3.0, std: 1.2 },
+  { name: "Влияние родителей на мотив.", field: "parents_motivation",  r:  0.60, mean: 1.5, std: 1.0 },
+];
+
+// ─── REGRESSION MODEL (MLR, trained on 22 students, R²=0.587) ────────────────
+const REG_MODEL = {
+  intercept: 4.4458,
+  factors: [
+    { name: "Хобби / доп. занятия",           field: "hobby_hours",         beta:  0.0610, mean: 2.3, std: 1.2 },
+    { name: "Завтрак",                         field: "breakfast",           beta: -0.0996, mean: 2.5, std: 1.2 },
+    { name: "Место для учёбы дома",            field: "study_place",         beta: -0.0414, mean: 0.7, std: 0.5 },
+    { name: "Стабильность от семьи",           field: "stability",           beta: -0.0407, mean: 1.5, std: 1.0 },
+    { name: "Влияние родителей на мотивацию",  field: "parents_motivation",  beta:  0.1248, mean: 1.5, std: 1.0 },
+  ]
+};
+function showVal(el, id) {
+  document.getElementById(id).textContent = el.value;
+}
+
+function getVal(fieldName) {
+  // try radio
+  const radios = document.querySelectorAll(`input[name="${fieldName}"]`);
+  if (radios.length > 0 && radios[0].type === 'radio') {
+    for (const r of radios) {
+      if (r.checked) return parseFloat(r.value);
+    }
+    return null;
+  }
+  // try range
+  const range = document.querySelector(`input[name="${fieldName}"][type="range"]`);
+  if (range) return parseFloat(range.value);
+  return null;
+}
+
+// Auto-number all questions
+document.querySelectorAll('.q-card').forEach((card, i) => {
+  const label = card.querySelector('.q-label');
+  if (label) {
+    const num = document.createElement('div');
+    num.className = 'q-num';
+    num.textContent = `Вопрос ${i + 1} из ${document.querySelectorAll('.q-card').length}`;
+    card.insertBefore(num, label);
+  }
+});
+
+// Radio visual selection
+document.querySelectorAll('.opt').forEach(opt => {
+  opt.addEventListener('click', () => {
+    const radio = opt.querySelector('input[type=radio]');
+    if (!radio) return;
+    const name = radio.name;
+    document.querySelectorAll(`input[name="${name}"]`).forEach(r => {
+      r.closest('.opt').classList.remove('selected');
+    });
+    radio.checked = true;
+    opt.classList.add('selected');
+  });
+});
+
+// ─── CALCULATE ────────────────────────────────────────────────────────────────
+function calculate() {
+  const errEl = document.getElementById('error-msg');
+  errEl.style.display = 'none';
+
+  // Collect values & validate
+  const vals = {};
+  let missing = [];
+  for (const f of FACTORS) {
+    const v = getVal(f.field);
+    if (v === null) missing.push(f.name);
+    vals[f.field] = v;
+  }
+
+  if (missing.length > 0) {
+    // Highlight missing cards
+    document.querySelectorAll('.q-card').forEach(c => c.classList.remove('q-missing'));
+    missing.forEach(name => {
+      const f = FACTORS.find(f => f.name === name);
+      if (f) {
+        const card = document.querySelector(`.q-card[data-id="${f.field}"]`);
+        if (card) card.classList.add('q-missing');
+      }
+    });
+    errEl.style.display = 'block';
+    errEl.innerHTML = `⚠ Не отвечено на ${missing.length} вопрос(а/ов): <span style="font-weight:700">${missing.map(name => {
+      const f = FACTORS.find(f => f.name === name);
+      const card = f ? document.querySelector(`.q-card[data-id="${f.field}"]`) : null;
+      const num = card ? [...document.querySelectorAll('.q-card')].indexOf(card) + 1 : '?';
+      return `№${num}`;
+    }).join(', ')}</span>`;
+    // scroll to first missing card
+    const firstMissing = FACTORS.find(f => missing.includes(f.name));
+    if (firstMissing) {
+      const card = document.querySelector(`.q-card[data-id="${firstMissing.field}"]`);
+      if (card) card.scrollIntoView({ behavior:'smooth', block:'center' });
+    }
+    return;
+  }
+  // Clear highlights if all answered
+  document.querySelectorAll('.q-card').forEach(c => c.classList.remove('q-missing'));
+
+  // Compute z-scores and index — I = Σ(rᵢ · zᵢ)
+  let index = 0;
+  const rows = [];
+  for (const f of FACTORS) {
+    const x = vals[f.field];
+    const z = (x - f.mean) / f.std;
+    const contrib = f.r * z;
+    index += contrib;
+    rows.push({ ...f, x, z, contrib });
+  }
+
+  // Keep original question order (no sort)
+
+  // Display result
+  const resEl = document.getElementById('results');
+  resEl.style.display = 'block';
+  resEl.scrollIntoView({ behavior:'smooth', block:'start' });
+
+  const idxEl = document.getElementById('res-index-val');
+  const badge = document.getElementById('res-badge');
+  const desc  = document.getElementById('res-desc');
+
+  idxEl.textContent = index.toFixed(3);
+
+  if (index > 1) {
+    idxEl.className = 'res-index high';
+    badge.className = 'res-badge badge-high';
+    badge.textContent = 'ВЫСОКИЙ ИНДЕКС';
+    desc.textContent = 'Ваш образ жизни работает на вас. Условия — распорядок дня, семейная поддержка, здоровье, атмосфера в школе — в целом способствуют хорошей учёбе. Продолжайте в том же духе.';
+  } else if (index < -1) {
+    idxEl.className = 'res-index low';
+    badge.className = 'res-badge badge-low';
+    badge.textContent = 'НИЗКИЙ ИНДЕКС';
+    desc.textContent = 'Несколько факторов образа жизни сейчас работают против вас. Это не про способности, а про условия, в которых вы учитесь. Посмотрите в таблице ниже, какие именно пункты дают самый большой минус — с них и стоит начать.';
+  } else {
+    idxEl.className = 'res-index mid';
+    badge.className = 'res-badge badge-mid';
+    badge.textContent = 'СРЕДНИЙ ИНДЕКС';
+    desc.textContent = 'Что-то помогает вам учиться, что-то мешает. Посмотрите в таблице ниже, какие факторы дают минус — обычно достаточно изменить 1–2 из них, чтобы заметно улучшить результат.';
+  }
+
+  // Build z-score table sorted by question number (DOM order)
+  const allCards = [...document.querySelectorAll('.q-card')];
+  // Attach qNum to each row first
+  for (const row of rows) {
+    const card = document.querySelector(`.q-card[data-id="${row.field}"]`);
+    row.qNum = card ? allCards.indexOf(card) + 1 : 999;
+  }
+  // Sort by question number
+  rows.sort((a, b) => a.qNum - b.qNum);
+
+  const tbody = document.getElementById('ztable-body');
+  tbody.innerHTML = '';
+  for (const row of rows) {
+    const zColor = row.z >= 0 ? '#00e5c0' : '#ff4f6e';
+    const cClass = row.contrib >= 0 ? 'cpos' : 'cneg';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="font-family:var(--mono);color:var(--muted)">№${row.qNum}</td>
+      <td class="zval" style="color:${row.r >= 0 ? '#4f8fff' : '#ffb84f'}">${row.r >= 0 ? '+' : ''}${row.r.toFixed(2)}</td>
+      <td class="zval" style="color:var(--text)">${row.x}</td>
+      <td class="zval" style="color:${zColor}">${row.z >= 0 ? '+' : ''}${row.z.toFixed(3)}</td>
+      <td class="contrib ${cClass}">${row.contrib >= 0 ? '+' : ''}${row.contrib.toFixed(4)}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  // Totals row
+  const tr = document.createElement('tr');
+  tr.style.cssText = 'border-top:2px solid var(--accent); font-weight:600;';
+  tr.innerHTML = `
+    <td colspan="3" style="color:var(--muted); font-family:var(--mono); font-size:11px;">ИТОГО  I = Σ(r · z)</td>
+    <td colspan="2" class="zval" style="color:${index > 1 ? 'var(--accent2)' : index < -1 ? 'var(--danger)' : 'var(--warn)'}; font-size:18px;">${index >= 0 ? '+' : ''}${index.toFixed(4)}</td>
+  `;
+  tbody.appendChild(tr);
+
+  // ─── REGRESSION PREDICTION ──────────────────────────────────────────────────
+  const regEl = document.getElementById('results-reg');
+  regEl.style.display = 'block';
+
+  let grade = REG_MODEL.intercept;
+  const regRows = [];
+  for (const f of REG_MODEL.factors) {
+    const x = vals[f.field];
+    const z = (x - f.mean) / f.std;
+    const contribution = f.beta * z;
+    grade += contribution;
+    regRows.push({ ...f, z, contribution });
+  }
+  grade = Math.max(1, Math.min(5, grade)); // clamp to 1–5
+
+  const gradeEl = document.getElementById('reg-grade');
+  const regBadge = document.getElementById('reg-badge');
+  const regDesc  = document.getElementById('reg-desc');
+
+  gradeEl.textContent = grade.toFixed(2) + ' ± 0.21';
+
+  if (grade >= 4.5) {
+    gradeEl.style.color = 'var(--accent2)';
+    regBadge.style.display = 'none';
+    regDesc.textContent = 'Модель предсказывает высокую успеваемость. Факторы образа жизни складываются в пользу хорошего академического результата.';
+  } else if (grade >= 3.5) {
+    gradeEl.style.color = 'var(--warn)';
+    regBadge.style.display = 'none';
+    regDesc.textContent = 'Модель предсказывает среднюю успеваемость. Есть факторы, которые тянут результат вниз — они видны в таблице ниже.';
+  } else {
+    gradeEl.style.color = 'var(--danger)';
+    regBadge.style.display = 'none';
+    regDesc.textContent = 'Модель предсказывает сложности с успеваемостью. Обратите внимание на факторы с отрицательным вкладом.';
+  }
+
+  // Find question numbers for regression rows
+  const allCardsReg = [...document.querySelectorAll('.q-card')];
+  for (const row of regRows) {
+    const card = document.querySelector(`.q-card[data-id="${row.field}"]`);
+    row.qNum = card ? allCardsReg.indexOf(card) + 1 : '?';
+  }
+
+  const regTbody = document.getElementById('reg-table-body');
+  regTbody.innerHTML = '';
+  for (const row of regRows) {
+    const cColor = row.contribution >= 0 ? 'var(--accent2)' : 'var(--danger)';
+    const zColor = row.z >= 0 ? '#00e5c0' : '#ff4f6e';
+    const tr2 = document.createElement('tr');
+    tr2.innerHTML = `
+      <td style="font-family:var(--mono);color:var(--muted)">№${row.qNum}</td>
+      <td class="zval" style="color:${row.beta >= 0 ? '#4f8fff' : '#ffb84f'}">${row.beta >= 0 ? '+' : ''}${row.beta.toFixed(4)}</td>
+      <td class="zval" style="color:${zColor}">${row.z >= 0 ? '+' : ''}${row.z.toFixed(3)}</td>
+      <td class="contrib" style="color:${cColor}">${row.contribution >= 0 ? '+' : ''}${row.contribution.toFixed(4)}</td>
+    `;
+    regTbody.appendChild(tr2);
+  }
+}
+</script>
+</body>
+</html>
